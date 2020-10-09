@@ -1,5 +1,4 @@
 const express = require('express');
-const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const yup = require('yup');
@@ -8,53 +7,72 @@ const { nanoid } = require('nanoid');
 
 require('dotenv').config();
 
-// mongodb+srv://ryan:dbShortRy@cluster0.minbk.mongodb.net/<dbname>?retryWrites=true&w=majority
-MONGO_URI = 'mongodb+srv://ryan:dbShortRy@cluster0.minbk.mongodb.net/<dbname>?retryWrites=true&w=majority';
-const db = monk(MONGO_URI);
+const db = monk(process.env.MONGO_URI);
 const urls = db.get('urls');
-urls.createIndex('name');
+urls.createIndex({ alias: 1 }, { unique: true }); // Index on name so we can search by names
 
 const app = express();
+app.enable('trust proxy');
 
 app.use(helmet());
 app.use(morgan('tiny'));
-app.use(cors());
 app.use(express.json());
 app.use(express.static('./public'));
 
-// app.get('/url:id', (req, res) => {
-//   //Todo: get short url by id
-// });
-// app.get('/:id', (req,res) => {
-//     //Todo: redirect to url
-// });
+app.get('/id', async (req, res, next) => {
+  const { id: alias } = req.params;
+  try {
+    const url = await urlsFindOne({ alias });
+    if (url) {
+      return res.redicrect(url.url);
+    }
+    return res.status(404).sendFile(notFoundPath);
+  } catch (error) {
+    return res.status(404).sendFile(notFoundPath);
+  }
+});
 
 const schema = yup.object().shape({
   alias: yup
     .string()
     .trim()
-    .matches(/[\w\-]/i),
+    .matches(/^[\w\-]+$/i),
   url: yup.string().trim().url().required(),
 });
 
-app.get('/url', async (req, res) => {
+app.post('/url', async (req, res, next) => {
   let { alias, url } = req.body;
+
   try {
     await schema.validate({
-      slug,
-      url,
-    });
-    if (!alias) {
-      alias = nanoid(7);
-    }
-    alias = alias.toLowerCase();
-    res.json({
       alias,
       url,
     });
+
+    if (!alias) {
+      alias = nanoid(7);
+    } else {
+      const existing = await urls.findOne({ alias });
+      if (existing) {
+        throw new Error('Alias in use.');
+      }
+    }
+
+    alias = alias.toLowerCase();
+    const newUrl = {
+      url,
+      alias,
+    };
+    const created = await urls.insert(newUrl);
+    res.json(created);
+    res.end();
   } catch (error) {
     next(error);
   }
+});
+
+app.use((req, res, next) => {
+  res.status(404).sendFile(notFoundPath);
 });
 
 app.use((error, req, res, next) => {
@@ -69,7 +87,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-const port = process.env.PORT || 6464;
+const port = process.env.PORT || 1234;
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);
 });
