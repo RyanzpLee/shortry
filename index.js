@@ -4,25 +4,21 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const yup = require('yup');
 const monk = require('monk');
+const rateLimit = require('express-rate-limit');
+const slowDown = require('express-slow-down');
 const { nanoid } = require('nanoid');
 
 require('dotenv').config();
 
 const db = monk(process.env.MONGO_URI);
-db.then(() => {
-  console.log('connection success');
-}).catch((e) => {
-  console.error('Error !', e);
-});
-
 const urls = db.get('urls');
-urls.createIndex({ alias: 1 }, { unique: true }); // Index on name so we can search by names
+urls.createIndex({ alias: 1 }, { unique: true }); 
 
 const app = express();
 app.enable('trust proxy');
 
 app.use(helmet());
-app.use(morgan('tiny'));
+app.use(morgan('common'));
 app.use(express.json());
 app.use(express.static('./public'));
 
@@ -43,22 +39,24 @@ app.get('/id', async (req, res, next) => {
 
 // Yup for validation of the alias and url schema
 const schema = yup.object().shape({
-  alias: yup
-    .string()
-    .trim()
-    .matches(/^[\w\-]+$/i),
+  alias: yup.string().trim().matches(/^[\w\-]+$/i),
   url: yup.string().trim().url().required(),
 });
 
-app.post('/url', async (req, res, next) => {
+app.post('/url', slowDown({
+  windowMs: 30 * 1000,
+  delayAfter: 1,
+  delayMs: 500,
+}), rateLimit({
+  windowMs: 30 * 1000,
+  max: 1,
+}), async (req, res, next) => {
   let { alias, url } = req.body;
-
   try {
     await schema.validate({
       alias,
       url,
     });
-
     if (!alias) {
       alias = nanoid(7);
     } else {
@@ -67,14 +65,11 @@ app.post('/url', async (req, res, next) => {
         throw new Error('Alias in use.');
       }
     }
-
     alias = alias.toLowerCase();
     const newUrl = {
       alias,
       url,
     };
-
-    // Insert into db
     const created = await urls.insert(newUrl);
     res.json(created);
   } catch (error) {
