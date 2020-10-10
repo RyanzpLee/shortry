@@ -4,7 +4,6 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const yup = require('yup');
 const monk = require('monk');
-const mongo = require('mongodb');
 const { nanoid } = require('nanoid');
 
 require('dotenv').config();
@@ -27,7 +26,7 @@ app.use(morgan('tiny'));
 app.use(express.json());
 app.use(express.static('./public'));
 
-const notFoundPath = path.join(__dirname, 'public/4040.html');
+const notFoundPath = path.join(__dirname, 'public/404.html');
 
 app.get('/id', async (req, res, next) => {
   const { id: alias } = req.params;

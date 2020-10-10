@@ -1,29 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ShortRy</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header>
-    <img class="logo" src="./images/avatar.png">
-  </header>
-  <main id="app">
-    <form class="form" v-if="formVisible" @submit.prevent="createUrl()">
-      <div v-if="error" class="error">
-        {{error}}
+    <link rel="stylesheet" href="styles.css" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src *; style-src 'self' http://* 'unsafe-inline'; script-src 'self' http://* 'unsafe-inline' 'unsafe-eval'"
+    />
+  </head>
+  <body>
+    <header>
+      <img class="logo" src="./images/avatar.png" />
+    </header>
+    <main id="app">
+      <form class="form" v-if="formVisible" @submit.prevent="createUrl()">
+        <div v-if="error" class="error">{{error}}</div>
+        <input class="input" type="text" v-model="url" name="url" id="url" placeholder="enter a url" />
+        <input class="input" type="text" v-model="alias" name="alias" id="alias" placeholder="enter a alias" />
+        <button type="submit" class="create">create</button>
+      </form>
+      <div v-if="created">
+        <p class="created">Your short url is: <a :href="created">{{created}}</a></p>
       </div>
-      <input class="input" type="text" v-model="url" name="url" id="url" placeholder="enter a url">
-      <input class="input" type="text" v-model="alias" name="alias" id="alias" placeholder="enter a alias">
-      <button type="submit" class="create">create</button>
-    </form>
-    <div v-if="created">
-      <p class="created">Your short url is: <a :href="created">{{created}}</a></p>
-    </div>
-  </main>
-  <script src="https://unpkg.com/vue@2.6.11/dist/vue.js"></script>
-  <script src="app.js"></script>
-</body>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="./app.js"></script>
+  </body>
 </html>
