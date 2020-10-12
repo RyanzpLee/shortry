@@ -10,5 +10,5 @@ Exploring the node.js to try build a url shortener
 - Node.js
 
 ## Todo
-- [] Fix deployment issues with heroku
-- [] Consider serverless implementation
+- [ ] Fix deployment issues with heroku
+- [ ] Consider serverless implementation
