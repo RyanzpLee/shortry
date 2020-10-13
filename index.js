@@ -29,6 +29,7 @@ app.get('/id', async (req, res, next) => {
   try {
     const url = await urls.findOne({ alias });
     if (url) {
+      console.log("nice, alias found. Redirecting...")
       return res.redirect(url.url);
     }
     return res.status(404).sendFile(notFoundPath);
@@ -44,11 +45,11 @@ const schema = yup.object().shape({
 });
 
 app.post('/url', slowDown({
-  windowMs: 30 * 1000,
+  windowMs: 30 * 100,
   delayAfter: 1,
   delayMs: 500,
 }), rateLimit({
-  windowMs: 30 * 1000,
+  windowMs: 30 * 100,
   max: 1,
 }), async (req, res, next) => {
   let { alias, url } = req.body;
